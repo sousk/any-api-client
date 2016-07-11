@@ -1,30 +1,90 @@
+#!/usr/bin/env ruby
+
 require 'pry'
 
-class A
-	def hello
-		puts "hello world"
-	end
+$config = {
+  :prompt => "client > "
+}
 
-	def config c
-	end
+$env = {
+  :empty => {}
+}
+$envkey = :empty
 
-	def run
-		binding.pry
-	end
+$indent = "  "
+
+class AnyApiClient
+  def hello
+    line "hello world"
+  end
+
+  def run
+    describe
+    self.pry
+  end
+
+  def describe
+    puts  "welcome:"
+    puts
+    env
+    puts
+  end
+
+  def line text
+    puts "#{$indent}#{text}"
+  end
+
+  def env
+    line "Environment:"
+    delim = "    "
+    Dir.glob("./env/*.yaml").each{ |f|
+      flag = File.basename(f) == File.basename($envkey.to_s) ? " *":""
+      line "#{delim}#{f}#{flag}"
+    }
+    nil
+  end
+
+  def switch env
+    unless has_env? env
+      line
+      line "#  no such environment"
+      line "#  need to specifiy file path to $env.yaml"
+      line "#  type 'env' to show available envs"
+      line
+    else
+      $envkey = env
+    end
+  end
+
+  def has_env? name
+    names = envs.map {|e| File.basename e }
+    names.include? File.basename(name)
+  end
+
+  def envs
+    Dir.glob("./env/*.yaml")
+  end
+
+  def resume
+    puts "bye 🍵 "
+  end
 end
 
-config = Object.new
-
 Pry.config.prompt = [
-	proc { |t, lv, pry|
-		"client:"
-	}
+  proc { |t, lv, pry|
+    $config[:prompt]
+  }
 ]
 
-a = A.new
-a.config config
-a.run
+def main env
+  cl = AnyApiClient.new
+  cl.switch(env) if env
+  cl.run
+  cl.resume
+end
 
-# binding.pry
-puts "resumes here"
+if __FILE__ == $0
+  main ARGV.first
+end
+
 
